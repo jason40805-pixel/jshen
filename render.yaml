@@ -34,9 +34,15 @@ services:
       - key: ADMIN_URLS
         value: http://0.0.0.0:5092
       - key: ADMIN_BOOTSTRAP_USER
-        sync: false
+        fromService:
+          type: web
+          name: jshen-admin
+          envVarKey: ADMIN_BOOTSTRAP_USER
       - key: ADMIN_BOOTSTRAP_PASSWORD
-        sync: false
+        fromService:
+          type: web
+          name: jshen-admin
+          envVarKey: ADMIN_BOOTSTRAP_PASSWORD
       # Must have exactly the same secret as jshen-account-admin's
       # ADMIN_INTERNAL_KEY. This is server-side Worker configuration, never a
       # NEXT_PUBLIC_ value.
