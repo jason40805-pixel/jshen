@@ -28,10 +28,7 @@ services:
       # Do not set it to 127.0.0.1 in Render: that address is the UI container,
       # not the AccountAdmin service.
       - key: ACCOUNT_ADMIN_URL
-        fromService:
-          type: pserv
-          name: jshen-test-admin
-          property: hostport
+        value: https://jshen-test-admin.onrender.com
       # Must have exactly the same secret as jshen-account-admin's
       # ADMIN_INTERNAL_KEY. This is server-side Worker configuration, never a
       # NEXT_PUBLIC_ value.
@@ -54,10 +51,7 @@ services:
       - key: COLLECTOR_INGEST_KEY
         sync: false
       - key: DG_RELAY_URL
-        fromService:
-          type: web
-          name: jshen-test-dg-video
-          property: hostport
+        value: https://jshen-test-dg-video.onrender.com
       - key: DG_RELAY_PUBLIC_URL
         value: https://jshen-test-dg-video.onrender.com
       - key: DG_RELAY_API_KEY
@@ -71,7 +65,7 @@ services:
   - type: web
     name: jshen-test-relay
     runtime: docker
-    plan: starter
+    plan: free
     numInstances: 1
     buildFilter:
       paths:
@@ -87,10 +81,7 @@ services:
         sync: false
       # Private Render hostport. No public AccountAdmin endpoint is exposed.
       - key: ACCOUNT_ADMIN_URL
-        fromService:
-          type: pserv
-          name: jshen-test-admin
-          property: hostport
+        value: https://jshen-test-admin.onrender.com
       - key: ACCOUNT_ADMIN_INTERNAL_KEY
         sync: false
       # The relay permits a different producer only after this idle lease
@@ -135,14 +126,12 @@ services:
       - key: AB_PROXY_PASSWORD
         sync: false
 
-  # Persistent account administration. This service owns system users only;
-  # it never stores MT/DG platform credentials. The disk is required because
-  # AccountAdmin deliberately uses encrypted local data and Data Protection
-  # keys instead of an ephemeral container filesystem.
-  - type: pserv
+  # Free test-only account administration. Render Free has no persistent disk,
+  # so users and snapshots are discarded when this service restarts or sleeps.
+  - type: web
     name: jshen-test-admin
     runtime: docker
-    plan: starter
+    plan: free
     buildFilter:
       paths:
         - backend/AccountAdmin/**
@@ -159,7 +148,3 @@ services:
         sync: false
       - key: ADMIN_DATA_DIR
         value: /var/lib/account-admin
-    disk:
-      name: account-admin-data
-      mountPath: /var/lib/account-admin
-      sizeGB: 1
