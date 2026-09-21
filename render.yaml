@@ -126,25 +126,3 @@ services:
       - key: AB_PROXY_PASSWORD
         sync: false
 
-  # Free test-only account administration. Render Free has no persistent disk,
-  # so users and snapshots are discarded when this service restarts or sleeps.
-  - type: web
-    name: jshen-admin
-    runtime: docker
-    plan: free
-    buildFilter:
-      paths:
-        - backend/AccountAdmin/**
-        - render.yaml
-    dockerfilePath: ./backend/AccountAdmin/Dockerfile
-    dockerContext: .
-    healthCheckPath: /Admin/Login
-    envVars:
-      - key: ADMIN_INTERNAL_KEY
-        sync: false
-      - key: ADMIN_BOOTSTRAP_USER
-        sync: false
-      - key: ADMIN_BOOTSTRAP_PASSWORD
-        sync: false
-      - key: ADMIN_DATA_DIR
-        value: /var/lib/account-admin
