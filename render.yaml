@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: jshen-test-web
+    name: jshen
     runtime: node
     plan: free
     buildFilter:
@@ -106,7 +106,7 @@ services:
       - key: DG_BROWSER_CHANNEL
         value: msedge
       - key: DG_FRONTEND_ORIGIN
-        value: https://jshen-test-web.onrender.com
+        value: https://jshen.onrender.com
       - key: DG_RELAY_API_KEY
         sync: false
       - key: MT_BACKEND_USERNAME
