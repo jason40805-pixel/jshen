@@ -28,7 +28,7 @@ services:
       # Do not set it to 127.0.0.1 in Render: that address is the UI container,
       # not the AccountAdmin service.
       - key: ACCOUNT_ADMIN_URL
-        value: https://jshen-admin.onrender.com
+        value: https://jshen-test-admin.onrender.com
       # Must have exactly the same secret as jshen-account-admin's
       # ADMIN_INTERNAL_KEY. This is server-side Worker configuration, never a
       # NEXT_PUBLIC_ value.
@@ -81,7 +81,7 @@ services:
         sync: false
       # Private Render hostport. No public AccountAdmin endpoint is exposed.
       - key: ACCOUNT_ADMIN_URL
-        value: https://jshen-admin.onrender.com
+        value: https://jshen-test-admin.onrender.com
       - key: ACCOUNT_ADMIN_INTERNAL_KEY
         sync: false
       # The relay permits a different producer only after this idle lease
