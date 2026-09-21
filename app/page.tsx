@@ -1250,7 +1250,7 @@ export default function Home() {
             <button type="button" title="回歸測試" onClick={() => { disconnect(); setActiveMenu('regression'); }} className={`flex items-center rounded-lg border px-3 py-3 text-sm transition ${menuCollapsed ? 'justify-center' : 'gap-3'} ${activeMenu === 'regression' ? 'border-cyan-400/55 bg-cyan-400/10 font-medium text-cyan-100' : 'border-transparent text-slate-400 hover:border-cyan-400/30 hover:bg-cyan-400/5'}`}>
               <CircleDot className="h-4 w-4 shrink-0" /><span className={menuCollapsed ? 'hidden' : ''}>回歸測試</span>
             </button>
-            <button type="button" title="獎池" onClick={() => { disconnect(); setActiveMenu('payout'); }} className={`hidden items-center rounded-lg border px-3 py-3 text-sm transition lg:flex ${menuCollapsed ? 'justify-center' : 'gap-3'} ${activeMenu === 'payout' ? 'border-cyan-400/45 bg-cyan-400/10 font-medium text-cyan-100' : 'border-transparent text-slate-400 hover:border-cyan-400/30 hover:bg-cyan-400/5'}`}>
+            <button type="button" title="獎池" onClick={() => { disconnect(); setActiveMenu('payout'); }} className={`flex items-center rounded-lg border px-3 py-3 text-sm transition ${menuCollapsed ? 'justify-center' : 'gap-3'} ${activeMenu === 'payout' ? 'border-cyan-400/45 bg-cyan-400/10 font-medium text-cyan-100' : 'border-transparent text-slate-400 hover:border-cyan-400/30 hover:bg-cyan-400/5'}`}>
               <Gift className="h-4 w-4 shrink-0" /><span className={menuCollapsed ? 'hidden' : ''}>獎池</span>
             </button>
             <div className="hidden lg:block">{!menuCollapsed && <PoolMenuCards />}</div>
