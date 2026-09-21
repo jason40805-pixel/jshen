@@ -1,6 +1,6 @@
 import { readSession } from '@/lib/monitor-session';
 import { dgLoginPacket, dgSocketUrl } from '@/lib/dg-client';
-import { decodeDgPublicBean } from '@/lib/dg-protobuf';
+import { decodeDgPublicBean, DgTableAccumulator } from '@/lib/dg-protobuf';
 import { connectDgLines } from '@/lib/dg-connection';
 
 export async function GET(request: Request) {
@@ -9,7 +9,7 @@ export async function GET(request: Request) {
   const token = session.dgToken;
   if (!token) return Response.json({ message: session.dgError || '此次登入未取得 DG 授權，請重新登入。' }, { status: 503 });
   if (process.env.DG_RELAY_URL) {
-    if (!process.env.DG_RELAY_API_KEY) return Response.json({ message: 'C# DG 服務尚未設定內部驗證金鑰。' }, { status: 503 });
+    if (!process.env.DG_RELAY_API_KEY) return Response.json({ message: 'DG 服務尚未設定內部驗證金鑰。' }, { status: 503 });
     try {
       const response = await fetch(new URL('/api/dg/stream', process.env.DG_RELAY_URL), {
         method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Relay-Key': process.env.DG_RELAY_API_KEY },
@@ -18,7 +18,7 @@ export async function GET(request: Request) {
       return new Response(response.body, { status: response.status, headers: {
         'Content-Type': response.headers.get('Content-Type') || 'application/json', 'Cache-Control': 'no-store',
       } });
-    } catch { return Response.json({ message: '無法連接 C# DG 服務，請確認後端已啟動。' }, { status: 502 }); }
+    } catch { return Response.json({ message: '無法連接 DG 服務，請確認已啟動。' }, { status: 502 }); }
   }
   let upstream: WebSocket & { accept(): void };
   try {
@@ -27,6 +27,7 @@ export async function GET(request: Request) {
     return Response.json({ message: request.signal.aborted ? 'DG 連線已取消。' : error instanceof Error ? error.message : 'DG 連線失敗。' }, { status: 502 });
   }
   let stop = () => {};
+  const tableState = new DgTableAccumulator();
   const body = new ReadableStream<Uint8Array>({
     start(controller) {
       let closed = false;
@@ -47,8 +48,8 @@ export async function GET(request: Request) {
         try {
           if (!(event.data instanceof ArrayBuffer)) return;
           const packet = decodeDgPublicBean(event.data);
-          const tables = packet.table?.filter(table => table.tableId);
-          if (tables?.length) {
+          const tables = tableState.accept(packet);
+          if (tables.length) {
             authenticated = true; clearTimeout(timeout);
             send({ type: 'tables', tables });
           }

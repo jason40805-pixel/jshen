@@ -8,10 +8,11 @@ using Microsoft.Playwright;
 
 static class BrowserRelay
 {
-    record LaunchRequest(bool DirectLogin);
-    record Ticket(DateTimeOffset Expires);
+    record LaunchRequest(bool DirectLogin, string? GameUrl, bool Collector);
+    record Ticket(DateTimeOffset Expires, string? GameUrl, bool Collector);
     static readonly ConcurrentDictionary<string, Ticket> Tickets = new();
     static SharedDgFeed? feed;
+    static string? requestedGameUrl;
     public static object? Health => feed?.Health;
     static int active;
     public static int Active => Volatile.Read(ref active);
@@ -19,7 +20,8 @@ static class BrowserRelay
     public static void Map(WebApplication app, string key)
     {
         feed = new SharedDgFeed(app.Lifetime.ApplicationStopping,
-            (publish, ct) => Capture(app.Configuration, publish, ct));
+            (publish, ct) => Capture(app.Configuration, publish, ct),
+            "DG", TimeSpan.FromMinutes(15));
         app.MapPost("/api/dg/start", async (HttpContext http) =>
         {
             if (!CryptographicOperations.FixedTimeEquals(Encoding.UTF8.GetBytes(http.Request.Headers["X-Relay-Key"].ToString()), Encoding.UTF8.GetBytes(key)))
@@ -29,19 +31,27 @@ static class BrowserRelay
             try { input = await http.Request.ReadFromJsonAsync<LaunchRequest>(); }
             catch (JsonException) { return Results.BadRequest(); }
             if (input?.DirectLogin != true) return Results.BadRequest();
-            if (string.IsNullOrWhiteSpace(app.Configuration["DG_BACKEND_USERNAME"]) || string.IsNullOrWhiteSpace(app.Configuration["DG_BACKEND_PASSWORD"]))
-                return Results.Json(new { message = "DG 後台專用帳密尚未設定。" }, statusCode: 503);
+            string? gameUrl = null;
+            if (!string.IsNullOrWhiteSpace(input.GameUrl))
+            {
+                if (!TryValidateGameUrl(input.GameUrl, out gameUrl))
+                    return Results.Json(new { message = "DG 遊戲授權網址不受支援。" }, statusCode: 400);
+                // The DGLI URL is short-lived and is used only by the relay
+                // browser. Never return it to viewers or write it to logs.
+                requestedGameUrl = gameUrl;
+            }
+            if (gameUrl is null && requestedGameUrl is null)
+                return Results.Json(new { message = "DG 授權網址尚未由採集端提供。" }, statusCode: 503);
             foreach (var entry in Tickets.Where(e => e.Value.Expires < DateTimeOffset.UtcNow)) Tickets.TryRemove(entry.Key, out _);
             if (Tickets.Count >= 32) return Results.StatusCode(429);
             var ticket = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
-            Tickets[ticket] = new(DateTimeOffset.UtcNow.AddMinutes(1));
+            Tickets[ticket] = new(DateTimeOffset.UtcNow.AddMinutes(1), gameUrl, input.Collector);
             http.Response.Headers.CacheControl = "no-store";
             return Results.Json(new { ticket });
         });
         app.Map("/ws/dg", async (HttpContext http) =>
         {
-            var allowed = app.Configuration["DG_FRONTEND_ORIGIN"] ?? "http://localhost:3000";
-            if (http.Request.Headers.Origin != allowed || !http.WebSockets.IsWebSocketRequest) { http.Response.StatusCode = 403; return; }
+            if (!OriginPolicy.IsAllowed(app.Configuration, http.Request.Headers.Origin) || !http.WebSockets.IsWebSocketRequest) { http.Response.StatusCode = 403; return; }
             using var socket = await http.WebSockets.AcceptWebSocketAsync();
             using var lifetime = CancellationTokenSource.CreateLinkedTokenSource(http.RequestAborted);
             lifetime.CancelAfter(TimeSpan.FromHours(1));
@@ -55,7 +65,8 @@ static class BrowserRelay
                 using var json = JsonDocument.Parse(buffer.AsMemory(0, auth.Count));
                 if (!json.RootElement.TryGetProperty("ticket", out var field) || field.ValueKind != JsonValueKind.String) return;
                 if (!Tickets.TryRemove(field.GetString()!, out var ticket) || ticket.Expires < DateTimeOffset.UtcNow) return;
-                var subscription = feed.Subscribe();
+                if (ticket.GameUrl is not null) requestedGameUrl = ticket.GameUrl;
+                var subscription = ticket.Collector ? feed.SubscribeCollector() : feed.Subscribe();
                 try
                 {
                     var receiving = WatchClient(socket, lifetime.Token);
@@ -90,53 +101,146 @@ static class BrowserRelay
     static Task Send(System.Net.WebSockets.WebSocket socket, object data, CancellationToken ct) =>
         socket.SendAsync(JsonSerializer.SerializeToUtf8Bytes(data).AsMemory(), WebSocketMessageType.Text, true, ct).AsTask();
 
+    static bool TryValidateGameUrl(string raw, out string normalized)
+    {
+        normalized = "";
+        var value = raw.Trim();
+        if (!value.Contains("://", StringComparison.Ordinal)) value = "https://" + value;
+        if (!Uri.TryCreate(value, UriKind.Absolute, out var uri) || uri.Scheme != Uri.UriSchemeHttps) return false;
+        var host = uri.Host.ToLowerInvariant();
+        var allowed = host.EndsWith(".ahsy114.com", StringComparison.Ordinal)
+            || host.EndsWith(".20299999.com", StringComparison.Ordinal)
+            || host.EndsWith(".dggw.vip", StringComparison.Ordinal)
+            || host.EndsWith(".ywjxi.com", StringComparison.Ordinal)
+            || host.EndsWith(".dingdangmail.com", StringComparison.Ordinal);
+        if (!allowed || !uri.Query.Contains("token=", StringComparison.OrdinalIgnoreCase)) return false;
+        normalized = uri.ToString();
+        return true;
+    }
+
     static async Task Capture(IConfiguration configuration, Func<object, CancellationToken, Task> publish, CancellationToken ct)
     {
-        var packets = Channel.CreateBounded<byte[]>(new BoundedChannelOptions(256) { SingleReader = true, FullMode = BoundedChannelFullMode.Wait });
+        // DG can open several fail-over sockets. Keep the raw frame queue
+        // deliberately small so a stalled decoder cannot retain hundreds of
+        // megabytes of protobuf/control frames in a Free Render instance.
+        var packets = Channel.CreateBounded<byte[]>(new BoundedChannelOptions(64) {
+            SingleReader = true, FullMode = BoundedChannelFullMode.DropOldest
+        });
         Interlocked.Increment(ref active);
+        var budgetAcquired = false;
         try
         {
-            await publish( new { type = "status", message = "C# 正在啟動獨立 DG 瀏覽器…" }, ct);
+            Console.Error.WriteLine("[DG] capture starting");
+            await BrowserSessionBudget.Gate.WaitAsync(ct);
+            budgetAcquired = true;
+            Console.Error.WriteLine("[DG] browser budget acquired");
+            await publish( new { type = "status", message = "正在啟動獨立 DG 瀏覽器…" }, ct);
             using var playwright = await Playwright.CreateAsync();
+            Console.Error.WriteLine("[DG] Playwright initialized");
             await using var browser = await playwright.Chromium.LaunchAsync(new() {
-                Headless = true, Channel = configuration["DG_BROWSER_CHANNEL"] ?? "msedge", Timeout = 30000,
+                Headless = true,
+                Channel = configuration["DG_BROWSER_CHANNEL"] ?? "msedge",
+                Timeout = 30000,
+                // DG only needs the official page and its WebSocket feed. Keep
+                // Edge's background services from consuming the small Render
+                // instance while preserving the real browser protocol.
+                Args = new[] {
+                    "--disable-gpu",
+                    "--disable-extensions",
+                    "--disable-background-networking",
+                    "--disable-component-update",
+                    "--disable-default-apps",
+                    "--disable-sync",
+                    "--no-first-run",
+                    "--no-default-browser-check",
+                    "--disable-dev-shm-usage"
+                }
             });
+            Console.Error.WriteLine("[DG] Edge launched");
             await using var context = await browser.NewContextAsync(new() { AcceptDownloads = false });
+            // The official game does not need local media to produce its
+            // WebSocket table feed. Avoid retaining large dealer images/fonts
+            // in the relay browser's renderer process.
+            await context.RouteAsync("**/*", async route =>
+            {
+                var resourceType = route.Request.ResourceType;
+                // The DG bundle waits for its TTF load callback before it
+                // initializes the protobuf/WebSocket feed. Keep fonts
+                // available; only large visual resources are optional here.
+                if (resourceType is "image" or "media")
+                {
+                    await route.AbortAsync();
+                    return;
+                }
+                await route.ContinueAsync();
+            });
             using var cancellation = ct.Register(() => { _ = browser.CloseAsync(); });
             IPage? gamePage = null;
-            Microsoft.Playwright.IWebSocket? liveSocket = null;
+            // DG opens a primary socket plus one or more fail-over sockets.
+            // Keep all official sockets active: the last socket opened is not
+            // guaranteed to be the one carrying baccarat table packets.
+            var liveSockets = new HashSet<Microsoft.Playwright.IWebSocket>();
+            var rawFrames = 0;
+            var decodeFailures = 0;
             void AttachPage(IPage observedPage) => observedPage.WebSocket += (_, ws) =>
             {
-                if (!Uri.TryCreate(ws.Url, UriKind.Absolute, out var upstream) || upstream.Scheme != "wss"
-                    || !(upstream.Host.EndsWith(".taxyss.com") || upstream.Host.EndsWith(".kindlestone.com") || upstream.Host.EndsWith(".ywjxi.com"))) return;
+                if (!Uri.TryCreate(ws.Url, UriKind.Absolute, out var upstream)
+                    || !(upstream.Scheme.Equals("wss", StringComparison.OrdinalIgnoreCase)
+                        || upstream.Scheme.Equals("ws", StringComparison.OrdinalIgnoreCase))) return;
+                // Keep diagnostics useful without ever writing query strings
+                // (the official page can put a session token in the URL).
+                Console.WriteLine($"[DG] websocket observed: {upstream.Host}{upstream.AbsolutePath}");
+                if (!(upstream.Host.EndsWith(".taxyss.com") || upstream.Host.EndsWith(".kindlestone.com") || upstream.Host.EndsWith(".ywjxi.com"))) return;
                 gamePage = observedPage;
-                liveSocket = ws;
+                lock (liveSockets) liveSockets.Add(ws);
                 feed!.Connection(true);
-                ws.Close += (_, _) => { if (ReferenceEquals(liveSocket, ws)) feed.Connection(false); };
+                Console.WriteLine($"[DG] official socket connected: {upstream.Host}");
+                ws.Close += (_, _) =>
+                {
+                    lock (liveSockets) liveSockets.Remove(ws);
+                    lock (liveSockets)
+                    {
+                        if (liveSockets.Count == 0) feed.Connection(false);
+                    }
+                };
                 ws.FrameReceived += (_, frame) =>
                 {
                     var bytes = frame.Binary;
-                    if (!ReferenceEquals(liveSocket, ws)) return;
-                    if (bytes is null || bytes.Length > 1024 * 1024) return;
-                    if (!packets.Writer.TryWrite(bytes)) packets.Writer.TryComplete(new InvalidDataException("Packet queue exceeded"));
+                    if (bytes is null || bytes.Length > 256 * 1024) return;
+                    var frameNumber = Interlocked.Increment(ref rawFrames);
+                    if (frameNumber <= 5)
+                        Console.WriteLine($"[DG] binary frame received: {bytes.Length} bytes");
+                    packets.Writer.TryWrite(bytes);
                 };
             };
             context.Page += (_, openedPage) => AttachPage(openedPage);
             var page = await context.NewPageAsync();
-            await page.GotoAsync("https://dg18.cc/", new() { WaitUntil = WaitUntilState.DOMContentLoaded, Timeout = 30000 });
-            await page.GetByPlaceholder("账号", new() { Exact = true }).FillAsync(configuration["DG_BACKEND_USERNAME"]!);
-            await page.GetByPlaceholder("登入密码", new() { Exact = true }).FillAsync(configuration["DG_BACKEND_PASSWORD"]!);
-            await page.Locator("#remember_input").UncheckAsync();
-            await page.GetByRole(AriaRole.Button, new() { Name = "登录", Exact = true }).ClickAsync();
-            var enter = page.GetByRole(AriaRole.Button, new() { Name = "进入游戏", Exact = true });
-            try { await enter.WaitForAsync(new() { Timeout = 20000 }); }
-            catch (System.TimeoutException)
+            // Keep this explicit as well as subscribing to context.Page. This
+            // avoids missing the initial page on Playwright/Edge combinations
+            // that deliver the Page event before the handler is observed.
+            AttachPage(page);
+            page.PageError += (_, error) => Console.Error.WriteLine($"[DG] page error: {error}");
+            page.Console += (_, message) =>
             {
-                await publish( new { type = "error", message = "dg18.cc 登入未完成，請確認專用帳密或是否需要人工驗證。" }, ct);
-                throw new DgLoginRequiredException();
+                // Console output can contain the current URL (and therefore a
+                // session token), so keep only the message type here.
+                if (message.Type is "error" or "warning")
+                    Console.Error.WriteLine($"[DG] browser console {message.Type}");
+            };
+            page.RequestFailed += (_, request) =>
+            {
+                if (Uri.TryCreate(request.Url, UriKind.Absolute, out var failed))
+                    Console.Error.WriteLine($"[DG] request failed: {failed.Host}{failed.AbsolutePath}");
+            };
+            var directGameUrl = requestedGameUrl;
+            if (directGameUrl is null)
+            {
+                throw new DgLoginRequiredException("等待前端提供 DGLI 遊戲授權網址。", false);
             }
-            await enter.ClickAsync();
-            await publish( new { type = "status", message = "官方 DG 頁面已開啟，等待百家樂桌況…" }, ct);
+            await page.GotoAsync(directGameUrl, new() { WaitUntil = WaitUntilState.DOMContentLoaded, Timeout = 60000 });
+            Console.Error.WriteLine($"[DG] DGLI game page loaded: {new Uri(page.Url).Host}{new Uri(page.Url).AbsolutePath}");
+            gamePage = page;
+            await publish(new { type = "status", message = "官方 DG 頁面已開啟，等待百家樂桌況…" }, ct);
             var decoder = new DgTableDecoder();
             var lastTables = DateTimeOffset.UtcNow;
             var lastPacket = DateTimeOffset.UtcNow;
@@ -158,7 +262,7 @@ static class BrowserRelay
                         {
                             reloaded = true;
                             decoder = new DgTableDecoder();
-                            liveSocket = null;
+                            lock (liveSockets) liveSockets.Clear();
                             while (packets.Reader.TryRead(out _)) { }
                             await gamePage.ReloadAsync(new() { WaitUntil = WaitUntilState.DOMContentLoaded, Timeout = 30000 });
                             lastPacket = lastTables = DateTimeOffset.UtcNow;
@@ -168,11 +272,22 @@ static class BrowserRelay
                     }
                     await publish( new { type = "heartbeat" }, ct); continue;
                 }
-                var tables = decoder.Accept(bytes);
+                List<Dictionary<string, object>> tables;
+                try { tables = decoder.Accept(bytes); }
+                catch (InvalidDataException)
+                {
+                    // Control/heartbeat frames can share the same official
+                    // sockets. They are not table protobuf messages.
+                    var failureNumber = Interlocked.Increment(ref decodeFailures);
+                    if (failureNumber <= 5)
+                        Console.WriteLine($"[DG] ignored non-table frame ({failureNumber})");
+                    continue;
+                }
                 lastPacket = DateTimeOffset.UtcNow;
                 feed!.Packet();
                 if (tables.Count > 0)
                 {
+                    Console.WriteLine($"[DG] decoded tables: {tables.Count}; frames={rawFrames}");
                     foreach (var table in tables)
                     {
                         if (table.TryGetValue("dealer", out var value) && value is Dictionary<string, object> dealer && dealer.TryGetValue("photo", out var photo))
@@ -194,6 +309,6 @@ static class BrowserRelay
             if (!ct.IsCancellationRequested)
                 await publish( new { type = "reset", message = "DG 重新連線中…" }, ct);
         }
-        finally { feed!.Connection(false); Interlocked.Decrement(ref active); }
+        finally { if (budgetAcquired) BrowserSessionBudget.Gate.Release(); feed!.Connection(false); Interlocked.Decrement(ref active); }
     }
 }

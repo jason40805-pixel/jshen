@@ -1,0 +1,165 @@
+services:
+  - type: web
+    name: jshen-test-web
+    runtime: node
+    plan: free
+    buildFilter:
+      paths:
+        - app/**
+        - components/**
+        - hooks/**
+        - lib/**
+        - public/**
+        - scripts/**
+        - package.json
+        - package-lock.json
+        - tsconfig.json
+        - vite.config.*
+        - render.yaml
+    buildCommand: npm ci && npm run build
+    # Render is a Node host. Use Vinext's production Node server rather than
+    # running the Cloudflare development runtime (Wrangler) inside Render.
+    startCommand: npx vinext start --port $PORT
+    healthCheckPath: /
+    envVars:
+      - key: NODE_VERSION
+        value: 22.13.0
+      # The UI only talks to AccountAdmin through this private Render URL.
+      # Do not set it to 127.0.0.1 in Render: that address is the UI container,
+      # not the AccountAdmin service.
+      - key: ACCOUNT_ADMIN_URL
+        fromService:
+          type: pserv
+          name: jshen-test-admin
+          property: hostport
+      # Must have exactly the same secret as jshen-account-admin's
+      # ADMIN_INTERNAL_KEY. This is server-side Worker configuration, never a
+      # NEXT_PUBLIC_ value.
+      - key: ACCOUNT_ADMIN_INTERNAL_KEY
+        sync: false
+      - key: MONITOR_SESSION_SECRET
+        sync: false
+      # Shared system account used by collector mode. Keep these as Render
+      # secrets; they are checked only by /api/mt-login in collector mode.
+      - key: SYSTEM_LOGIN_USERNAME
+        sync: false
+      - key: SYSTEM_LOGIN_PASSWORD
+        sync: false
+      # Used only by the fixed browser collector's URL fragment. It grants a
+      # collector-only encrypted session; never expose it in a normal viewer URL.
+      - key: COLLECTOR_BOOTSTRAP_KEY
+        sync: false
+      # Used only by the Windows desktop collector to POST normalized MT/DG
+      # snapshots. It is distinct from browser sessions and must be 32+ chars.
+      - key: COLLECTOR_INGEST_KEY
+        sync: false
+      - key: DG_RELAY_URL
+        fromService:
+          type: web
+          name: jshen-test-dg-video
+          property: hostport
+      - key: DG_RELAY_PUBLIC_URL
+        value: https://jshen-test-dg-video.onrender.com
+      - key: DG_RELAY_API_KEY
+        sync: false
+
+  # The desktop collector keeps one authenticated WebSocket open to this
+  # lightweight public relay. The relay forwards validated, in-order full
+  # snapshots to AccountAdmin over Render's private network. Keeping relay
+  # state out of the UI service prevents a UI deploy/restart from dropping the
+  # active collection stream.
+  - type: web
+    name: jshen-test-relay
+    runtime: docker
+    plan: starter
+    numInstances: 1
+    buildFilter:
+      paths:
+        - backend/CollectorRelay/**
+        - render.yaml
+    dockerfilePath: ./backend/CollectorRelay/Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    envVars:
+      # Same value as the public web service's COLLECTOR_INGEST_KEY. This
+      # authorizes only the desktop publisher, never normal viewer sessions.
+      - key: COLLECTOR_INGEST_KEY
+        sync: false
+      # Private Render hostport. No public AccountAdmin endpoint is exposed.
+      - key: ACCOUNT_ADMIN_URL
+        fromService:
+          type: pserv
+          name: jshen-test-admin
+          property: hostport
+      - key: ACCOUNT_ADMIN_INTERNAL_KEY
+        sync: false
+      # The relay permits a different producer only after this idle lease
+      # expires. The persistent AccountAdmin lease remains authoritative.
+      - key: COLLECTOR_RELAY_IDLE_SECONDS
+        value: 45
+
+  # DG is isolated from MT and the web UI. A DG failure or restart can no
+  # longer clear MT's shared feed or interrupt management login.
+  - type: web
+    name: jshen-test-dg-video
+    runtime: docker
+    plan: free
+    buildFilter:
+      paths:
+        - backend/DgRelay/**
+        - render.yaml
+    dockerfilePath: ./backend/DgRelay/Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    envVars:
+      - key: DG_BROWSER_CHANNEL
+        value: msedge
+      - key: DG_FRONTEND_ORIGIN
+        value: https://jshen-test-web.onrender.com
+      - key: DG_RELAY_API_KEY
+        sync: false
+      - key: MT_BACKEND_USERNAME
+        sync: false
+      - key: MT_BACKEND_PASSWORD
+        sync: false
+      - key: DG_BACKEND_USERNAME
+        sync: false
+      - key: DG_BACKEND_PASSWORD
+        sync: false
+      # Optional Webshare/free-proxy test settings for the AB browser only.
+      # Keep all three values as Render secrets; leave unset for direct egress.
+      - key: AB_PROXY_SERVER
+        sync: false
+      - key: AB_PROXY_USERNAME
+        sync: false
+      - key: AB_PROXY_PASSWORD
+        sync: false
+
+  # Persistent account administration. This service owns system users only;
+  # it never stores MT/DG platform credentials. The disk is required because
+  # AccountAdmin deliberately uses encrypted local data and Data Protection
+  # keys instead of an ephemeral container filesystem.
+  - type: pserv
+    name: jshen-test-admin
+    runtime: docker
+    plan: starter
+    buildFilter:
+      paths:
+        - backend/AccountAdmin/**
+        - render.yaml
+    dockerfilePath: ./backend/AccountAdmin/Dockerfile
+    dockerContext: .
+    healthCheckPath: /Admin/Login
+    envVars:
+      - key: ADMIN_INTERNAL_KEY
+        sync: false
+      - key: ADMIN_BOOTSTRAP_USER
+        sync: false
+      - key: ADMIN_BOOTSTRAP_PASSWORD
+        sync: false
+      - key: ADMIN_DATA_DIR
+        value: /var/lib/account-admin
+    disk:
+      name: account-admin-data
+      mountPath: /var/lib/account-admin
+      sizeGB: 1
