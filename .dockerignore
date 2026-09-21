@@ -1,0 +1,15 @@
+.git
+.env*
+node_modules
+dist
+.next
+.wrangler
+.vinext
+backend/**/bin
+backend/**/obj
+*.log
+*.db
+*.db-*
+*.pdb
+tsconfig.tsbuildinfo
+tests

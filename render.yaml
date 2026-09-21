@@ -1,11 +1,20 @@
 services:
   - type: web
     name: jshen
-    runtime: node
-    plan: free
+    runtime: docker
+    plan: 0.5c-512mb
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    disk:
+      name: jshen-data
+      mountPath: /var/lib/jshen
+      sizeGB: 1
     buildFilter:
       paths:
+        - Dockerfile
+        - .dockerignore
         - app/**
+        - backend/AccountAdmin/**
         - components/**
         - hooks/**
         - lib/**
@@ -16,19 +25,18 @@ services:
         - tsconfig.json
         - vite.config.*
         - render.yaml
-    buildCommand: npm ci && npm run build
-    # Render is a Node host. Use Vinext's production Node server rather than
-    # running the Cloudflare development runtime (Wrangler) inside Render.
-    startCommand: npx vinext start --port $PORT
     healthCheckPath: /
     envVars:
-      - key: NODE_VERSION
-        value: 22.13.0
-      # The UI only talks to AccountAdmin through this private Render URL.
-      # Do not set it to 127.0.0.1 in Render: that address is the UI container,
-      # not the AccountAdmin service.
       - key: ACCOUNT_ADMIN_URL
-        value: https://jshen-admin.onrender.com
+        value: http://127.0.0.1:5092
+      - key: ADMIN_DATA_DIR
+        value: /var/lib/jshen
+      - key: ADMIN_URLS
+        value: http://0.0.0.0:5092
+      - key: ADMIN_BOOTSTRAP_USER
+        sync: false
+      - key: ADMIN_BOOTSTRAP_PASSWORD
+        sync: false
       # Must have exactly the same secret as jshen-account-admin's
       # ADMIN_INTERNAL_KEY. This is server-side Worker configuration, never a
       # NEXT_PUBLIC_ value.
@@ -79,9 +87,12 @@ services:
       # authorizes only the desktop publisher, never normal viewer sessions.
       - key: COLLECTOR_INGEST_KEY
         sync: false
-      # Private Render hostport. No public AccountAdmin endpoint is exposed.
-      - key: ACCOUNT_ADMIN_URL
-        value: https://jshen-admin.onrender.com
+      # Route to the AccountAdmin process on jshen's additional private port.
+      - key: ACCOUNT_ADMIN_HOST
+        fromService:
+          type: web
+          name: jshen
+          property: host
       - key: ACCOUNT_ADMIN_INTERNAL_KEY
         sync: false
       # The relay permits a different producer only after this idle lease

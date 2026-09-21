@@ -30,7 +30,10 @@ public sealed class RelaySettings
         if (string.IsNullOrWhiteSpace(internalKey) || internalKey.Length < 32)
             throw new InvalidOperationException("ACCOUNT_ADMIN_INTERNAL_KEY must contain at least 32 characters.");
 
-        var configuredUrl = configuration["ACCOUNT_ADMIN_URL"]?.Trim();
+        var privateHost = configuration["ACCOUNT_ADMIN_HOST"]?.Trim();
+        var configuredUrl = !string.IsNullOrWhiteSpace(privateHost)
+            ? $"http://{privateHost}:5092"
+            : configuration["ACCOUNT_ADMIN_URL"]?.Trim();
         if (string.IsNullOrWhiteSpace(configuredUrl)) configuredUrl = "http://127.0.0.1:5092";
         if (!configuredUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
             && !configuredUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
