@@ -280,6 +280,11 @@ export function FloatingBrowser() {
         <div onPointerDown={(event) => beginAdjustment(event, "move")} className={`flex shrink-0 items-center justify-between border-b border-slate-600 px-3 py-2 ${!mobile && !large ? "touch-none select-none cursor-move" : ""}`} title={!mobile && !large ? "拖曳移動浮動視窗" : undefined}>
           <span className="text-sm font-semibold">浮動視窗</span>
           <div className="flex items-center gap-1">
+            {authenticated && <button type="button" onClick={() => {
+              endAdjustment();
+              setLarge(false);
+              setBounds(null);
+            }} className="hidden rounded p-2 text-sm hover:bg-white/10 lg:flex" aria-label="回到預設設定">回到預設設定</button>}
             {authenticated && <button type="button" onClick={logout} className="flex items-center gap-1 rounded p-2 text-sm hover:bg-white/10" aria-label={`登出 ${site} 官網`}><LogOut className="h-4 w-4" />登出</button>}
             <button type="button" onClick={() => setVisible(false)} className="hidden rounded p-2 hover:bg-white/10 lg:block" aria-label="縮小浮動視窗"><Minimize2 className="h-4 w-4" /></button>
             <button type="button" onClick={() => setLarge((current) => !current)} className="hidden rounded p-2 hover:bg-white/10 lg:block" aria-label={large ? "還原浮動視窗" : "放大浮動視窗"}><Maximize2 className="h-4 w-4" /></button>
