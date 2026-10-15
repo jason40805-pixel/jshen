@@ -278,7 +278,7 @@ export function FloatingBrowser() {
         style={!mobile && !large && bounds ? { ...bounds, right: "auto", bottom: "auto" } : undefined}
         className={`fixed inset-x-0 top-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-50 flex w-screen flex-col overflow-hidden bg-[#0e1727] text-white shadow-2xl lg:rounded-xl lg:border lg:border-cyan-400/60 ${visible ? "" : "hidden"} ${large ? "lg:inset-4 lg:h-auto lg:w-auto" : "lg:bottom-5 lg:left-auto lg:right-5 lg:top-auto lg:h-[min(72vh,650px)] lg:w-[min(92vw,760px)]"}`}>
         <div onPointerDown={(event) => beginAdjustment(event, "move")} className={`flex shrink-0 items-center justify-between border-b border-slate-600 px-3 py-2 ${!mobile && !large ? "touch-none select-none cursor-move" : ""}`} title={!mobile && !large ? "拖曳移動浮動視窗" : undefined}>
-          <span className="text-sm font-semibold">{site}官網</span>
+          <span className="text-sm font-semibold">浮動視窗</span>
           <div className="flex items-center gap-1">
             {authenticated && <button type="button" onClick={logout} className="flex items-center gap-1 rounded p-2 text-sm hover:bg-white/10" aria-label={`登出 ${site} 官網`}><LogOut className="h-4 w-4" />登出</button>}
             <button type="button" onClick={() => setVisible(false)} className="hidden rounded p-2 hover:bg-white/10 lg:block" aria-label="縮小浮動視窗"><Minimize2 className="h-4 w-4" /></button>
