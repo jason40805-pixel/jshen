@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   description: 'J神・圖形來世｜即時牌卡預測系統',
   manifest: '/manifest.webmanifest',
   appleWebApp: { capable: true, title: 'J神・圖形來世', statusBarStyle: 'black-translucent' },
-  icons: { icon: '/jshen-logo.svg', apple: '/apple-touch-icon.png' },
+  icons: { icon: '/jshen-logo.jpg', apple: '/apple-touch-icon.png' },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
