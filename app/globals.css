@@ -633,6 +633,61 @@ body {
   background: linear-gradient(145deg, rgb(19 45 79 / 98%), rgb(5 18 40 / 98%) 66%, rgb(22 32 73 / 95%)) !important;
   box-shadow: inset 0 0 45px rgb(42 159 239 / 10%), 0 0 25px rgb(22 157 238 / 8%) !important;
 }
+.tech-app .app-sidebar {
+  background: radial-gradient(circle at 0 0, rgb(25 122 202 / 22%), transparent 42%), linear-gradient(180deg, #071a35, #061327 65%, #040e20) !important;
+  border-color: rgb(77 198 244 / 30%) !important;
+}
+.tech-app .app-side-nav > button {
+  min-height: 45px;
+  border-color: transparent;
+  border-radius: 12px;
+  color: #c9d9eb;
+}
+.tech-app .app-side-nav > button:hover {
+  border-color: rgb(103 232 249 / 38%) !important;
+  background: rgb(29 95 138 / 16%) !important;
+  color: white;
+}
+.tech-app .app-side-nav > button[class*='bg-amber'],
+.tech-app .app-side-nav > button[class*='bg-cyan'] {
+  border-color: rgb(103 232 249 / 75%) !important;
+  background: linear-gradient(105deg, rgb(17 126 164 / 38%), rgb(10 39 75 / 78%)) !important;
+  color: #e7fbff !important;
+  box-shadow: inset 3px 0 #5ceaff, inset 0 0 22px rgb(34 211 238 / 12%), 0 0 14px rgb(34 211 238 / 9%) !important;
+}
+.tech-app .app-side-nav [aria-label='獎池摘要'] {
+  border-color: rgb(103 232 249 / 34%) !important;
+  background: linear-gradient(160deg, rgb(11 42 76 / 95%), rgb(4 20 43 / 95%)) !important;
+}
+.tech-app .app-toolbar {
+  border-bottom: 1px solid rgb(103 232 249 / 22%);
+  padding-bottom: 14px;
+}
+.tech-app .app-toolbar [aria-label='聯絡資訊'] button,
+.tech-app .app-toolbar [aria-label='聯絡資訊'] a,
+.tech-app .app-toolbar > div:last-child > button {
+  background: linear-gradient(145deg, #102c4c, #081b34) !important;
+  border: 1px solid rgb(103 232 249 / 38%) !important;
+  color: #eafaff !important;
+  box-shadow: inset 0 1px rgb(180 239 255 / 8%);
+}
+.tech-app .app-toolbar [aria-label='聯絡資訊'] button:hover,
+.tech-app .app-toolbar [aria-label='聯絡資訊'] a:hover,
+.tech-app .app-toolbar > div:last-child > button:hover {
+  border-color: #67e8f9 !important;
+  box-shadow: 0 0 14px rgb(34 211 238 / 20%);
+}
+.tech-app .app-mobile-nav {
+  border-color: rgb(103 232 249 / 42%) !important;
+  background: linear-gradient(180deg, rgb(8 32 62 / 98%), rgb(4 18 39 / 98%)) !important;
+  box-shadow: 0 -7px 24px rgb(0 0 0 / 25%);
+}
+.tech-app .app-mobile-nav button[aria-current='page'] {
+  border-color: #67e8f9 !important;
+  background: rgb(34 211 238 / 10%) !important;
+  color: #67e8f9 !important;
+  text-shadow: 0 0 12px rgb(103 232 249 / 45%);
+}
 @media (max-width: 1023px) {
   .tech-login-layout { max-width: 460px; }
   .tech-app { background: radial-gradient(circle at 95% 0, rgb(84 44 186 / 30%), transparent 30%), #061024; }

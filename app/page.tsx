@@ -2921,7 +2921,7 @@ export default function Home() {
       <div
         className={`min-h-screen lg:grid ${menuCollapsed ? "lg:grid-cols-[78px_minmax(0,1fr)]" : "lg:grid-cols-[250px_minmax(0,1fr)]"}`}
       >
-        <aside className="border-b border-cyan-300/25 bg-[#07182d]/95 px-4 py-3 lg:sticky lg:top-0 lg:h-screen lg:border-b-0 lg:border-r lg:px-5 lg:py-7">
+        <aside className="app-sidebar border-b border-cyan-300/25 bg-[#07182d]/95 px-4 py-3 lg:sticky lg:top-0 lg:h-screen lg:border-b-0 lg:border-r lg:px-5 lg:py-7">
           <div
             className={`flex items-center gap-3 ${menuCollapsed ? "justify-center" : "px-2"}`}
           >
@@ -2958,7 +2958,7 @@ export default function Home() {
             )}
           </button>
           <nav
-            className="mt-4 hidden grid-cols-2 gap-2 lg:mt-10 lg:grid lg:grid-cols-1"
+            className="app-side-nav mt-4 hidden grid-cols-2 gap-2 lg:mt-10 lg:grid lg:grid-cols-1"
             aria-label="主選單"
           >
             <button
@@ -3021,7 +3021,7 @@ export default function Home() {
           </nav>
         </aside>
 
-        <nav aria-label="手機版主選單" className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-cyan-300/30 bg-[#07182d]/95 px-1 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] backdrop-blur lg:hidden">
+        <nav aria-label="手機版主選單" className="app-mobile-nav fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-cyan-300/30 bg-[#07182d]/95 px-1 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] backdrop-blur lg:hidden">
           {([
             { key: "curated", label: "J神嚴選", icon: Crown },
             { key: "tables", label: "即時桌況", icon: LayoutGrid },
@@ -3047,7 +3047,7 @@ export default function Home() {
 
         <div className="min-w-0 px-3 py-3 sm:px-7 sm:py-8 lg:px-8">
           <div className="min-w-0">
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div className="app-toolbar mb-4 flex flex-wrap items-center justify-between gap-3">
               {activeMenu === "tables" && (
                 <div role="tablist" aria-label="平台" className="flex gap-2">
                   {(["MT", "DG", "AB"] as const).map((value) => (
