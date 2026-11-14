@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Crown } from 'lucide-react';
+import { Binoculars, ChartNoAxesColumnIncreasing, Crown, Search, ShieldCheck, Zap } from 'lucide-react';
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { BaccaratTableCard, type FocusedTableSettings, type TableInfo } from '@/components/baccarat-table-card';
 import { CardLayoutSelect, cardGridColumns, type CardColumns } from '@/components/card-layout';
@@ -346,23 +346,25 @@ export function JshenPicks({ tablesByPlatform, connectedByPlatform, cardsPerRow,
 
   if (simulationOnly) return <SimulationDashboard />;
 
-  return <section className="overflow-hidden rounded-2xl border border-amber-300/25 bg-[#0d111a] shadow-[0_24px_70px_rgba(0,0,0,.42)]">
-    <header className="border-b border-amber-300/20 px-5 py-4">
+  return <section className="curated-panel overflow-hidden rounded-2xl border border-cyan-300/35 bg-[#0a1c32] shadow-[0_24px_70px_rgba(0,0,0,.35)]">
+    <header className="curated-header border-b border-cyan-300/15 px-4 py-4 sm:px-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2 text-amber-200"><Crown className="h-5 w-5" /><h1 className="text-lg font-semibold">J神嚴選</h1><span className="text-xs font-normal text-slate-400">每 10 秒更新</span></div>
-        <div className="flex flex-wrap items-center gap-2"><label className="flex items-center gap-1 text-xs text-slate-400">排序<select value={sortMode} onChange={event => setSortMode(event.target.value as SortMode)} className="rounded-md border border-slate-600 bg-slate-900 px-2 py-1.5 font-semibold text-white"><option value="win-rate">勝率排行</option><option value="profit">收益排行</option><option value="roi">ROI 排行</option></select></label><CardLayoutSelect value={cardsPerRow} onChange={onCardsPerRowChange} /></div>
+        <div className="flex items-center gap-2 text-[#f3d792]"><Crown className="h-6 w-6" /><h1 className="text-xl font-bold tracking-wide sm:text-2xl">J神嚴選</h1><span className="ml-2 flex items-center gap-1.5 text-xs font-normal text-slate-300"><span className="h-2 w-2 rounded-full bg-cyan-300 shadow-[0_0_10px_#67e8f9]" />每 10 秒更新</span></div>
+        <div className="curated-controls flex flex-wrap items-center gap-2"><label className="flex items-center gap-2 text-xs text-slate-300">排序<select value={sortMode} onChange={event => setSortMode(event.target.value as SortMode)} className="rounded-lg border border-cyan-300/35 bg-[#0b213b] px-3 py-2 font-semibold text-white"><option value="win-rate">勝率排行</option><option value="profit">收益排行</option><option value="roi">ROI 排行</option></select></label><CardLayoutSelect value={cardsPerRow} onChange={onCardsPerRowChange} /></div>
       </div>
-      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2" role="group" aria-label="平台篩選">
-        <span className="text-xs text-slate-400">平台</span>
-        {pickPlatforms.map(value => <label key={value} className={`flex min-h-8 cursor-pointer items-center gap-1.5 rounded-md border px-2.5 text-xs font-semibold transition ${selectedPlatforms.includes(value) ? 'border-cyan-300/60 bg-cyan-400/10 text-cyan-100' : 'border-slate-600 text-slate-400'}`}>
-          <input type="checkbox" checked={selectedPlatforms.includes(value)} disabled={!platformsReady} onChange={() => togglePlatform(value)} className="h-3.5 w-3.5 accent-cyan-400" />
+      <div className="curated-filters mt-4 rounded-xl border border-cyan-300/25 bg-[#102840]/65 p-3 sm:p-4">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2" role="group" aria-label="平台篩選">
+        <span className="text-sm text-slate-200">平台</span>
+        {pickPlatforms.map(value => <label key={value} className={`flex min-h-9 cursor-pointer items-center gap-2 rounded-lg border px-3 text-sm font-semibold transition ${selectedPlatforms.includes(value) ? 'border-cyan-300/75 bg-cyan-400/15 text-cyan-100 shadow-[inset_0_0_16px_rgba(34,211,238,.12)]' : 'border-slate-500/65 bg-[#0a1b30] text-slate-200'}`}>
+          <input type="checkbox" checked={selectedPlatforms.includes(value)} disabled={!platformsReady} onChange={() => togglePlatform(value)} className="h-4 w-4 accent-cyan-400" />
           {platformLabel(value)}
         </label>)}
-        <button type="button" onClick={() => selectPlatforms([...pickPlatforms])} disabled={!platformsReady || selectedPlatforms.length === pickPlatforms.length} className="min-h-8 px-1 text-xs text-cyan-200 underline-offset-4 hover:underline disabled:cursor-default disabled:text-slate-500 disabled:no-underline">全選</button>
+        <button type="button" onClick={() => selectPlatforms([...pickPlatforms])} disabled={!platformsReady || selectedPlatforms.length === pickPlatforms.length} className="min-h-8 px-1 text-sm font-semibold text-cyan-200 underline-offset-4 hover:underline disabled:cursor-default disabled:text-slate-500 disabled:no-underline">全選</button>
         {platformMessage && <span role="status" className="text-xs text-amber-200">{platformMessage}</span>}
       </div>
-      <div className="mt-3 flex gap-2 overflow-x-auto">{(Object.keys(routeLabels) as Route[]).map(value => <button key={value} type="button" onClick={() => selectRoute(value)} className={`shrink-0 rounded-lg border px-3 py-1.5 text-sm font-bold transition ${route === value ? "border-amber-300 bg-amber-300/15 font-bold text-amber-100" : "border-slate-600 bg-slate-900/60 text-slate-400 hover:border-amber-300/50"}`}>{routeLabels[value]}</button>)}</div>
-      <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-white/5 bg-black/20 px-3 py-2 text-xs text-slate-300"><strong className="text-amber-100">{routeLabels[route]}</strong><span>{routeDescriptions[route]}</span><span className="rounded bg-slate-800 px-1.5 py-0.5 text-cyan-100">{selectedPlatforms.map(platformLabel).join('／')} · 依「{sortLabels[sortMode]}」顯示前 6 名</span></div>
+      <div className="curated-routes mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">{(Object.keys(routeLabels) as Route[]).map(value => { const Icon = value === 'stable' ? ShieldCheck : value === 'bold' ? ChartNoAxesColumnIncreasing : value === 'hot' ? Zap : Binoculars; return <button key={value} type="button" onClick={() => selectRoute(value)} className={`flex min-h-11 items-center justify-center gap-2 rounded-xl border px-2 py-2 text-sm font-bold transition ${route === value ? "border-[#f3d792] bg-[#f3d792]/15 text-[#ffe8ad] shadow-[inset_0_0_20px_rgba(243,215,146,.12)]" : "border-cyan-200/30 bg-[#0b2139] text-slate-100 hover:border-cyan-300/60"}`}><Icon className="h-5 w-5 shrink-0" />{routeLabels[value]}</button>; })}</div>
+      <div className="mt-4 rounded-xl border border-cyan-200/25 bg-[#10263f] px-4 py-3 text-sm text-slate-200"><strong className="text-[#ffe8ad]">{routeLabels[route]}</strong><span className="ml-2">{routeDescriptions[route]}</span><span className="mt-2 block text-xs text-cyan-100">{selectedPlatforms.map(platformLabel).join('／')} · 依「{sortLabels[sortMode]}」顯示前 6 名</span></div>
+      </div>
     </header>
     {picks.length ? <div className={`grid gap-3 p-3 ${cardGridColumns[cardsPerRow]}`}>
       {picks.map(pick => {
@@ -403,6 +405,6 @@ export function JshenPicks({ tablesByPlatform, connectedByPlatform, cardsPerRow,
             : <div role="status" className="p-4 text-sm text-slate-400">{pick.sourceLabel} · {pick.table.name || pick.table.id}：等待最新桌況，暫停顯示預測。</div>}
         </div>;
       })}
-    </div> : <div className="grid min-h-56 place-items-center p-6 text-center text-sm text-slate-400">{platformsReady ? `所選平台（${selectedPlatforms.map(platformLabel).join('／')}）目前沒有符合「${routeLabels[route]}」條件的正收益組合` : '正在載入平台設定…'}</div>}
+    </div> : <div className="curated-empty mx-3 my-3 flex min-h-52 flex-col items-center justify-center rounded-2xl border border-cyan-300/25 bg-[#10243d] p-6 text-center sm:min-h-60"><Search className="mb-4 h-11 w-11 text-sky-300/70" /><p className="text-lg font-semibold text-white">{platformsReady ? '暫無符合條件的組合' : '正在載入平台設定…'}</p>{platformsReady && <p className="mt-2 text-sm text-slate-300">所選平台：{selectedPlatforms.map(platformLabel).join('／')} · {routeLabels[route]}<br />試試其他平台或篩選條件</p>}</div>}
   </section>;
 }

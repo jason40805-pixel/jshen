@@ -2921,11 +2921,11 @@ export default function Home() {
       <div
         className={`min-h-screen lg:grid ${menuCollapsed ? "lg:grid-cols-[78px_minmax(0,1fr)]" : "lg:grid-cols-[250px_minmax(0,1fr)]"}`}
       >
-        <aside className="border-b border-[#86632f]/35 bg-[#0a0806]/95 px-3 py-3 lg:sticky lg:top-0 lg:h-screen lg:border-b-0 lg:border-r lg:px-5 lg:py-7">
+        <aside className="border-b border-cyan-300/25 bg-[#07182d]/95 px-4 py-3 lg:sticky lg:top-0 lg:h-screen lg:border-b-0 lg:border-r lg:px-5 lg:py-7">
           <div
             className={`flex items-center gap-3 ${menuCollapsed ? "justify-center" : "px-2"}`}
           >
-            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-[#e6c273]/35 bg-gradient-to-b from-[#2a2012] to-[#0e0b07]">
+            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-[#e6c273]/55 bg-[#08192b]">
               <img
                 src="/jshen-logo-v2.jpg"
                 alt="J神・圖形來世 Logo"
@@ -3021,7 +3021,7 @@ export default function Home() {
           </nav>
         </aside>
 
-        <nav aria-label="手機版主選單" className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-[#86632f]/45 bg-[#0a0806]/95 px-1 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] backdrop-blur lg:hidden">
+        <nav aria-label="手機版主選單" className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-cyan-300/30 bg-[#07182d]/95 px-1 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] backdrop-blur lg:hidden">
           {([
             { key: "curated", label: "J神嚴選", icon: Crown },
             { key: "tables", label: "即時桌況", icon: LayoutGrid },
@@ -3037,7 +3037,7 @@ export default function Home() {
                 if (key === "regression" || key === "payout") disconnect();
                 setActiveMenu(key);
               }}
-              className={`flex min-w-0 flex-col items-center justify-center gap-1 rounded-lg px-0.5 py-1 text-[10px] leading-tight ${activeMenu === key ? "bg-amber-300/10 text-amber-100" : "text-slate-400"}`}
+              className={`flex min-w-0 flex-col items-center justify-center gap-1 rounded-lg px-0.5 py-1 text-[10px] leading-tight ${activeMenu === key ? "border-b-2 border-[#f3d792] bg-[#f3d792]/10 text-[#ffe8ad]" : "text-slate-300"}`}
             >
               <Icon className="h-5 w-5" />
               <span className="whitespace-nowrap">{label}</span>
@@ -3045,7 +3045,7 @@ export default function Home() {
           ))}
         </nav>
 
-        <div className="min-w-0 px-4 py-5 sm:px-7 sm:py-8 lg:px-8">
+        <div className="min-w-0 px-3 py-3 sm:px-7 sm:py-8 lg:px-8">
           <div className="min-w-0">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               {activeMenu === "tables" && (
