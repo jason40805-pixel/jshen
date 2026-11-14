@@ -417,7 +417,7 @@ function usePersistentPayoutAmounts() {
 function PayoutFeature() {
   const { amounts, announcements } = usePersistentPayoutAmounts();
   return (
-    <section className="overflow-hidden rounded-2xl border border-[#86632f]/45 bg-[#0d0b08]/95 shadow-[0_24px_70px_rgba(0,0,0,.42)]">
+    <section className="app-content-panel overflow-hidden rounded-2xl border border-[#86632f]/45 bg-[#0d0b08]/95 shadow-[0_24px_70px_rgba(0,0,0,.42)]">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#5d451f]/55 bg-[#100d08]/80 px-5 py-4 sm:px-6">
         <div className="flex items-center gap-3">
           <Gift className="h-5 w-5 text-[#f0ce83]" />
@@ -656,7 +656,7 @@ function TableCompare({
     onSelectedChange(next);
   };
   return (
-    <section className="overflow-hidden rounded-2xl border border-cyan-400/30 bg-[#0d111a] shadow-[0_24px_70px_rgba(0,0,0,.42)]">
+    <section className="app-content-panel overflow-hidden rounded-2xl border border-cyan-400/30 bg-[#0d111a] shadow-[0_24px_70px_rgba(0,0,0,.42)]">
       <header className="border-b border-cyan-400/20 px-5 py-4">
         <h1 className="text-lg font-semibold text-cyan-100">關注牌桌</h1>
         <p className="mt-1 text-xs text-slate-400">
@@ -773,7 +773,7 @@ function FocusedTableCompare({
     onSelectedChange(next);
   };
   return (
-    <section className="overflow-hidden rounded-2xl border border-cyan-400/30 bg-[#0d111a] shadow-[0_24px_70px_rgba(0,0,0,.42)]">
+    <section className="app-content-panel overflow-hidden rounded-2xl border border-cyan-400/30 bg-[#0d111a] shadow-[0_24px_70px_rgba(0,0,0,.42)]">
       <header className="border-b border-cyan-400/20 px-5 py-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-lg font-semibold text-cyan-100">關注牌桌</h1>
@@ -3228,7 +3228,7 @@ export default function Home() {
                 )}
                 {platform === "MT" && (
                   <>
-                    <section className="overflow-hidden rounded-2xl border border-[#86632f]/35 bg-[#0d0b08]/92">
+                    <section className="app-content-panel overflow-hidden rounded-2xl border border-[#86632f]/35 bg-[#0d0b08]/92">
                       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-[#5d451f]/60 px-6 py-4">
                         <div>
                           <h2 className="text-lg font-semibold">
