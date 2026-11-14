@@ -2800,14 +2800,14 @@ export default function Home() {
       <main className="ofa-shell tech-login min-h-screen px-4 py-6 text-[#f7edda] sm:px-8">
         <header className="tech-login-header mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
           <div className="flex items-center gap-3">
-            <img src="/jshen-logo-v2.jpg" alt="J神 Logo" width="36" height="36" />
+            <img src="/jshen-logo-v3.jpg" alt="J神 Logo" width="36" height="36" />
             <span className="text-base font-bold tracking-wide text-white sm:text-lg">J神・圖形來世</span>
           </div>
           <span className="hidden text-xs tracking-[.25em] text-cyan-200/70 sm:inline">即時牌卡預測系統</span>
         </header>
         <div className="tech-login-layout mx-auto grid w-full max-w-7xl items-center gap-10 py-10 lg:min-h-[calc(100vh-110px)] lg:grid-cols-[minmax(0,1fr)_430px] lg:gap-16 lg:py-8">
         <div className="tech-login-hero relative hidden min-h-[600px] flex-col justify-center lg:flex">
-          <div className="tech-login-orbit" aria-hidden="true"><img src="/jshen-logo-v2.jpg" alt="" width="220" height="220" /></div>
+          <div className="tech-login-orbit" aria-hidden="true"><img src="/jshen-logo-v3.jpg" alt="" width="220" height="220" /></div>
           <p className="relative z-10 text-xs font-bold tracking-[.45em] text-cyan-300">LIVE DATA · INTELLIGENT INSIGHT</p>
           <h1 className="relative z-10 mt-5 text-6xl font-black tracking-tight text-white xl:text-7xl">J神・圖形來世</h1>
           <p className="relative z-10 mt-5 text-3xl font-semibold tracking-[.2em] text-cyan-100">數據驅動判斷</p>
@@ -2820,7 +2820,7 @@ export default function Home() {
             <div className="mb-8 text-center">
               <div className="mx-auto mb-5 grid h-16 w-16 place-items-center rounded-2xl border border-[#e6c273]/35 bg-gradient-to-b from-[#2a2012] to-[#0e0b07] shadow-[0_0_35px_rgba(197,145,52,.14)]">
                 <img
-                  src="/jshen-logo-v2.jpg"
+                  src="/jshen-logo-v3.jpg"
                   alt="J神・圖形來世 Logo"
                   width="56"
                   height="56"
@@ -2927,7 +2927,7 @@ export default function Home() {
           >
             <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-[#e6c273]/55 bg-[#08192b]">
               <img
-                src="/jshen-logo-v2.jpg"
+                src="/jshen-logo-v3.jpg"
                 alt="J神・圖形來世 Logo"
                 width="40"
                 height="40"
