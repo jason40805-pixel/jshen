@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Binoculars, ChartNoAxesColumnIncreasing, Crown, Search, ShieldCheck, Zap } from 'lucide-react';
+import { Binoculars, ChartNoAxesColumnIncreasing, Search, ShieldCheck, Zap } from 'lucide-react';
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { BaccaratTableCard, type FocusedTableSettings, type TableInfo } from '@/components/baccarat-table-card';
 import { CardLayoutSelect, cardGridColumns, type CardColumns } from '@/components/card-layout';
@@ -42,7 +42,6 @@ const minimumQualifyingBets = 10;
 const stableStrategies = new Set<BettingStrategy>(['flat', 'dalembert']);
 const routeLabels: Record<Route, string> = { stable: '穩健精選', bold: '高收益精選', hot: '近期強勢', watch: '觀察名單' };
 const defaultSortByRoute: Record<Route, SortMode> = { stable: 'win-rate', bold: 'profit', hot: 'profit', watch: 'win-rate' };
-const sortLabels: Record<SortMode, string> = { 'win-rate': '勝率排行', profit: '收益排行', roi: 'ROI 排行' };
 const routeDescriptions: Record<Route, string> = {
   stable: '低波動、長期正收益；至少實際出手 20 次。',
   bold: '依本靴淨贏注數尋找高收益組合，可接受較高波動。',
@@ -346,25 +345,26 @@ export function JshenPicks({ tablesByPlatform, connectedByPlatform, cardsPerRow,
 
   if (simulationOnly) return <SimulationDashboard />;
 
-  return <section className="curated-panel overflow-hidden rounded-2xl border border-cyan-300/35 bg-[#0a1c32] shadow-[0_24px_70px_rgba(0,0,0,.35)]">
-    <header className="curated-header border-b border-cyan-300/15 px-4 py-4 sm:px-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2 text-[#f3d792]"><Crown className="h-6 w-6" /><h1 className="text-xl font-bold tracking-wide sm:text-2xl">J神嚴選</h1><span className="ml-2 flex items-center gap-1.5 text-xs font-normal text-slate-300"><span className="h-2 w-2 rounded-full bg-cyan-300 shadow-[0_0_10px_#67e8f9]" />每 10 秒更新</span></div>
-        <div className="curated-controls flex flex-wrap items-center gap-2"><label className="flex items-center gap-2 text-xs text-slate-300">排序<select value={sortMode} onChange={event => setSortMode(event.target.value as SortMode)} className="rounded-lg border border-cyan-300/35 bg-[#0b213b] px-3 py-2 font-semibold text-white"><option value="win-rate">勝率排行</option><option value="profit">收益排行</option><option value="roi">ROI 排行</option></select></label><CardLayoutSelect value={cardsPerRow} onChange={onCardsPerRowChange} /></div>
+  return <section className="curated-panel min-w-0">
+    <header className="curated-header px-1 py-3 sm:px-2">
+      <p className="mb-2 flex items-center gap-3 text-xs tracking-[.2em] text-slate-300">策略觀測<span className="h-px w-10 bg-cyan-300 shadow-[0_0_9px_#67e8f9]" /></p>
+      <div className="mb-5 flex flex-wrap items-end justify-between gap-2">
+        <h1 className="text-3xl font-black tracking-wide text-white sm:text-4xl">J神嚴選</h1>
+        <span className="flex items-center gap-2 pb-1 text-sm text-slate-200"><span className="h-2 w-2 rounded-full bg-cyan-300 shadow-[0_0_10px_#67e8f9]" />每 10 秒更新</span>
       </div>
-      <div className="curated-filters mt-4 rounded-xl border border-cyan-300/25 bg-[#102840]/65 p-3 sm:p-4">
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-2" role="group" aria-label="平台篩選">
-        <span className="text-sm text-slate-200">平台</span>
-        {pickPlatforms.map(value => <label key={value} className={`flex min-h-9 cursor-pointer items-center gap-2 rounded-lg border px-3 text-sm font-semibold transition ${selectedPlatforms.includes(value) ? 'border-cyan-300/75 bg-cyan-400/15 text-cyan-100 shadow-[inset_0_0_16px_rgba(34,211,238,.12)]' : 'border-slate-500/65 bg-[#0a1b30] text-slate-200'}`}>
-          <input type="checkbox" checked={selectedPlatforms.includes(value)} disabled={!platformsReady} onChange={() => togglePlatform(value)} className="h-4 w-4 accent-cyan-400" />
-          {platformLabel(value)}
-        </label>)}
-        <button type="button" onClick={() => selectPlatforms([...pickPlatforms])} disabled={!platformsReady || selectedPlatforms.length === pickPlatforms.length} className="min-h-8 px-1 text-sm font-semibold text-cyan-200 underline-offset-4 hover:underline disabled:cursor-default disabled:text-slate-500 disabled:no-underline">全選</button>
-        {platformMessage && <span role="status" className="text-xs text-amber-200">{platformMessage}</span>}
+      <div id="curated-platform-filter" className="curated-platform-row flex items-center gap-3" role="group" aria-label="平台篩選">
+        <span className="shrink-0 text-sm font-semibold text-white">平台</span>
+        <div className="grid min-w-0 flex-1 grid-cols-4 overflow-hidden rounded-xl border border-cyan-300/30 bg-[#0b1e36]">
+          {pickPlatforms.map(value => <label key={value} className={`flex min-h-11 cursor-pointer items-center justify-center border-r border-cyan-300/20 px-1 text-sm font-bold transition last:border-r-0 ${selectedPlatforms.includes(value) ? 'bg-gradient-to-b from-cyan-300 to-cyan-500 text-[#03182a] shadow-[0_0_17px_rgba(34,211,238,.55)]' : 'text-slate-100'}`}>
+            <input type="checkbox" checked={selectedPlatforms.includes(value)} disabled={!platformsReady} onChange={() => togglePlatform(value)} className="sr-only" />{platformLabel(value)}
+          </label>)}
+          <button type="button" onClick={() => selectPlatforms([...pickPlatforms])} disabled={!platformsReady || selectedPlatforms.length === pickPlatforms.length} className="min-h-11 px-1 text-sm font-bold text-cyan-100 disabled:text-slate-500">全選</button>
+        </div>
       </div>
-      <div className="curated-routes mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">{(Object.keys(routeLabels) as Route[]).map(value => { const Icon = value === 'stable' ? ShieldCheck : value === 'bold' ? ChartNoAxesColumnIncreasing : value === 'hot' ? Zap : Binoculars; return <button key={value} type="button" onClick={() => selectRoute(value)} className={`flex min-h-11 items-center justify-center gap-2 rounded-xl border px-2 py-2 text-sm font-bold transition ${route === value ? "border-[#f3d792] bg-[#f3d792]/15 text-[#ffe8ad] shadow-[inset_0_0_20px_rgba(243,215,146,.12)]" : "border-cyan-200/30 bg-[#0b2139] text-slate-100 hover:border-cyan-300/60"}`}><Icon className="h-5 w-5 shrink-0" />{routeLabels[value]}</button>; })}</div>
-      <div className="mt-4 rounded-xl border border-cyan-200/25 bg-[#10263f] px-4 py-3 text-sm text-slate-200"><strong className="text-[#ffe8ad]">{routeLabels[route]}</strong><span className="ml-2">{routeDescriptions[route]}</span><span className="mt-2 block text-xs text-cyan-100">{selectedPlatforms.map(platformLabel).join('／')} · 依「{sortLabels[sortMode]}」顯示前 6 名</span></div>
-      </div>
+      {platformMessage && <p role="status" className="mt-2 text-xs text-amber-200">{platformMessage}</p>}
+      <div className="curated-controls mt-3 flex flex-wrap items-center justify-between gap-3"><label className="flex items-center gap-2 text-sm text-white">排序<select value={sortMode} onChange={event => setSortMode(event.target.value as SortMode)} className="rounded-lg border border-cyan-300/35 bg-[#0b213b] px-3 py-2 font-semibold text-white"><option value="win-rate">勝率排行</option><option value="profit">收益排行</option><option value="roi">ROI 排行</option></select></label><CardLayoutSelect value={cardsPerRow} onChange={onCardsPerRowChange} /></div>
+      <div className="curated-routes mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">{(Object.keys(routeLabels) as Route[]).map(value => { const Icon = value === 'stable' ? ShieldCheck : value === 'bold' ? ChartNoAxesColumnIncreasing : value === 'hot' ? Zap : Binoculars; return <button key={value} type="button" onClick={() => selectRoute(value)} className={`flex min-h-14 items-center justify-center gap-2 border px-2 py-2 text-sm font-bold transition ${route === value ? "border-cyan-300 bg-gradient-to-br from-cyan-400/25 to-cyan-900/25 text-white shadow-[inset_0_0_20px_rgba(34,211,238,.22),0_0_12px_rgba(34,211,238,.2)]" : "border-cyan-200/30 bg-[#10253f] text-slate-100 hover:border-cyan-300/60"}`}><Icon className="h-5 w-5 shrink-0 text-cyan-200" />{routeLabels[value]}</button>; })}</div>
+      <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-cyan-300/20 pt-3 text-sm text-slate-200"><strong className="flex items-center gap-2 text-white"><ShieldCheck className="h-5 w-5 text-cyan-300" />{routeLabels[route]}</strong><span>{routeDescriptions[route]}</span><span className="rounded bg-[#183653] px-2 py-0.5 text-xs text-cyan-100">{selectedPlatforms.map(platformLabel).join('／')} · 顯示前 6 名</span></div>
     </header>
     {picks.length ? <div className={`grid gap-3 p-3 ${cardGridColumns[cardsPerRow]}`}>
       {picks.map(pick => {
@@ -405,6 +405,6 @@ export function JshenPicks({ tablesByPlatform, connectedByPlatform, cardsPerRow,
             : <div role="status" className="p-4 text-sm text-slate-400">{pick.sourceLabel} · {pick.table.name || pick.table.id}：等待最新桌況，暫停顯示預測。</div>}
         </div>;
       })}
-    </div> : <div className="curated-empty mx-3 my-3 flex min-h-52 flex-col items-center justify-center rounded-2xl border border-cyan-300/25 bg-[#10243d] p-6 text-center sm:min-h-60"><Search className="mb-4 h-11 w-11 text-sky-300/70" /><p className="text-lg font-semibold text-white">{platformsReady ? '暫無符合條件的組合' : '正在載入平台設定…'}</p>{platformsReady && <p className="mt-2 text-sm text-slate-300">所選平台：{selectedPlatforms.map(platformLabel).join('／')} · {routeLabels[route]}<br />試試其他平台或篩選條件</p>}</div>}
+    </div> : <div className="curated-empty my-3 flex min-h-64 flex-col items-center justify-center overflow-hidden rounded-2xl border border-cyan-300/40 bg-[#10243d] p-6 text-center sm:min-h-72"><div className="mb-5 grid h-20 w-20 place-items-center rounded-full border border-cyan-300/50 bg-cyan-300/10 shadow-[0_0_24px_rgba(34,211,238,.25)]"><Search className="h-10 w-10 text-cyan-200" /></div><p className="text-xl font-bold text-white">{platformsReady ? '暫無符合條件的組合' : '正在載入平台設定…'}</p>{platformsReady && <><p className="mt-2 text-sm text-slate-300">試試其他平台或篩選條件</p><button type="button" onClick={() => document.getElementById('curated-platform-filter')?.scrollIntoView({ behavior: 'smooth', block: 'center' })} className="mt-5 rounded-lg border border-cyan-200/70 bg-gradient-to-b from-cyan-300 to-cyan-500 px-7 py-2 font-bold text-[#032037] shadow-[0_0_19px_rgba(34,211,238,.4)]">調整篩選</button></>}</div>}
   </section>;
 }
